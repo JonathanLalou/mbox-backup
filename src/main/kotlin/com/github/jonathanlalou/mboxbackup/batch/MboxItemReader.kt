@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 
 @Log4j
 @Component
-class MboxItemReader() : ItemReader<Mbox> {
+class MboxItemReader : ItemReader<Mbox> {
     final val X_GM_THRID = "X-GM-THRID"
     final val X_Gmail_Labels = "X-Gmail-Labels"
     final val X_Gmail_Received = "X-Gmail-Received"
@@ -83,6 +83,7 @@ class MboxItemReader() : ItemReader<Mbox> {
 //                        mail.bccs = mail.headers.filter { it.first.equals(Bcc) }?.first()?.second.split(",").map { StringUtils.trim(it) }
                         mbox.mails += mail
                     }
+                    println("Processing new mail element")
                     // init new mail
                     mail = Mail()
                     body = ""
@@ -111,6 +112,6 @@ class MboxItemReader() : ItemReader<Mbox> {
         } finally {
             LineIterator.closeQuietly(it)
         }
-        return mbox;
+        return mbox
     }
 }
