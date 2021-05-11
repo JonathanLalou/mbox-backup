@@ -3,17 +3,23 @@ package com.github.jonathanlalou.mboxbackup.batch
 import com.github.jonathanlalou.mboxbackup.domain.Mail
 import com.github.jonathanlalou.mboxbackup.domain.Mbox
 import lombok.extern.log4j.Log4j
+import mu.KotlinLogging
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.LineIterator
 import org.apache.commons.lang3.StringUtils
+import org.springframework.batch.core.JobParameters
+import org.springframework.batch.core.StepExecution
+import org.springframework.batch.core.annotation.BeforeStep
 import org.springframework.batch.item.ItemReader
-import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
+import java.io.File
 
 
 @Log4j
 @Component
 class MboxItemReader : ItemReader<Mbox> {
+    private val LOGGER = KotlinLogging.logger {}
+
     final val X_GM_THRID = "X-GM-THRID"
     final val X_Gmail_Labels = "X-Gmail-Labels"
     final val X_Gmail_Received = "X-Gmail-Received"
@@ -56,10 +62,22 @@ class MboxItemReader : ItemReader<Mbox> {
         Content_Transfer_Encoding
     )
 
+    var fileName: String? = null
+
+    @Suppress("unused")
+    @BeforeStep
+    fun beforeStep(stepExecution: StepExecution) {
+        val jobParameters: JobParameters = stepExecution.jobParameters
+        fileName = jobParameters.getString("fileName")
+    }
 
     override fun read(): Mbox? {
         var mbox = Mbox()
-        var file = ClassPathResource("/archives-2005.mbox").file
+        mbox.label = fileName
+        var file = File("./working/" + fileName)
+        if (!file.exists()) {
+            return null
+        }
         val it: LineIterator = FileUtils.lineIterator(file, "UTF-8")
         var lastLine: String?
         lastLine = "\n"
@@ -83,7 +101,7 @@ class MboxItemReader : ItemReader<Mbox> {
 //                        mail.bccs = mail.headers.filter { it.first.equals(Bcc) }?.first()?.second.split(",").map { StringUtils.trim(it) }
                         mbox.mails += mail
                     }
-                    println("Processing new mail element")
+                    LOGGER.info { "Processing new mail element" }
                     // init new mail
                     mail = Mail()
                     body = ""
