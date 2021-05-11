@@ -9,24 +9,35 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class JobConfiguration(
+class MboxBackupConfiguration(
     val jobBuilderFactory: JobBuilderFactory,
     val stepBuilderFactory: StepBuilderFactory
 ) {
 
     @Bean
-    fun step1(mboxItemReader: MboxItemReader, mboxItemWriter: MboxItemWriter): Step {
+    fun step1(
+        mboxItemReader: MboxItemReader,
+        mboxItemWriter: MboxItemWriter,
+        mboxItemReaderListener: MboxItemReaderListener
+    ): Step {
         return stepBuilderFactory.get("step1")
-            .chunk<Mbox, Mbox>(10)
+            .chunk<Mbox, Mbox>(1)
             .reader(mboxItemReader)
+            .listener(mboxItemReaderListener)
             .writer(mboxItemWriter)
             .build()
     }
 
     @Bean
-    fun job(mboxItemReader: MboxItemReader, mboxItemWriter: MboxItemWriter): Job {
+    fun job(
+        mboxItemReader: MboxItemReader,
+        mboxItemWriter: MboxItemWriter,
+        jobListener: MboxBackupJobListener,
+        mboxItemReaderListener: MboxItemReaderListener
+    ): Job {
         return jobBuilderFactory.get("job")
-            .start(step1(mboxItemReader, mboxItemWriter))
+            .listener(jobListener)
+            .start(step1(mboxItemReader, mboxItemWriter, mboxItemReaderListener))
             .build()
     }
 }
