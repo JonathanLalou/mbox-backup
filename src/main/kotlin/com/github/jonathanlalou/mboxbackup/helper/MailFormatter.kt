@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 @Component
 class MailFormatter {
     fun format(mail: Mail): String {
-        var headers = "<table>"
+        var headers = "<table>\n"
         for (header in mail.headers) {
             headers += "<tr><td><code>${header.first}</code></td><td><code>${header.second}</code></td></tr>\n"
         }

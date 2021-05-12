@@ -93,12 +93,27 @@ class MboxItemReader : ItemReader<Mbox> {
 
                 if (line.matches(regex)) {
                     // conclude previous mail
-                    if (HEADERS.isNotEmpty()) {
+                    if (mail.headers.isNotEmpty()) {
                         mail.body = body
-//                        mail.from = mail.headers.filter { it.first.equals(From) }. first()?.second
-//                        mail.tos = mail.headers.filter { it.first.equals(To) }?.first()?.second.split(",").map { StringUtils.trim(it) }
-//                        mail.ccs = mail.headers.filter { it.first.equals(Cc) }?.first()?.second.split(",").map { StringUtils.trim(it) }
-//                        mail.bccs = mail.headers.filter { it.first.equals(Bcc) }?.first()?.second.split(",").map { StringUtils.trim(it) }
+                        mail.from = mail.headers
+                            .filter { it.first.equals(From) }
+                            .firstOrNull()?.second
+                        mail.tos = mail.headers
+                            .filter { it.first.equals(To) }
+                            .firstOrNull()?.second
+                            ?.split(",")
+                            ?.map { StringUtils.trim(it) }
+                        mail.ccs = mail.headers
+                            .filter { it.first.equals(Cc) }
+                            .firstOrNull()?.second
+                            ?.split(",")
+                            ?.map { StringUtils.trim(it) }
+                        mail.bccs = mail.headers
+                            .filter { it.first.equals(Bcc) }
+                            .firstOrNull()
+                            ?.second
+                            ?.split(",")
+                            ?.map { StringUtils.trim(it) }
                         mbox.mails += mail
                     }
                     LOGGER.info { "Processing new mail element" }
@@ -109,8 +124,8 @@ class MboxItemReader : ItemReader<Mbox> {
                     inHeaders = true
                     continue
                 }
-                val candidateHeader = StringUtils.substringBefore(line, ":")
-                val candidateHeaderValue = StringUtils.substringAfter(line, ":")
+                val candidateHeader = StringUtils.trim(StringUtils.substringBefore(line, ":"))
+                val candidateHeaderValue = StringUtils.trim(StringUtils.substringAfter(line, ":"))
                 if (inHeaders && HEADERS.contains(candidateHeader.trim())) {
                     mail.headers += Pair(candidateHeader, candidateHeaderValue)
                     previousHeader = candidateHeader
@@ -120,7 +135,8 @@ class MboxItemReader : ItemReader<Mbox> {
                 ) {
                     inHeaders = true
                     var pair = Pair(Received, mail.headers.last().second + " " + line.trim())
-                    mail.headers += pair // TODO replace the last element / delete it before updating
+                    mail.headers.removeLast()
+                    mail.headers += pair
                 } else {
                     inHeaders = false
                     body = body + "\n" + line
