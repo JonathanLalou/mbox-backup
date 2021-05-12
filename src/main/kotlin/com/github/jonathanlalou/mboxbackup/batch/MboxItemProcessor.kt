@@ -24,6 +24,9 @@ class MboxItemProcessor : ItemProcessor<Mbox, Mbox> {
                     ?.second
                     ?.substringAfter("<")
                     ?.substringBefore(">")
+                if (null == mail.subject) {
+                    mail.subject = "(no subject)"
+                }
                 mail.from = mail.headers
                     .filter { it.first.equals(MboxItemReader.From) }
                     .firstOrNull()

@@ -31,12 +31,12 @@ class MboxItemWriter : ItemWriter<Mbox> {
                 if (mail.date != null) {
                     LOGGER.info { "Writing... ${mail.raw?.subSequence(0..59)}" }
                     FileUtils.write(
-                        File("./output/${mbox.label}/" + dateFormat.format(mail.date) + ".html.html"),
+                        File("./output/${mbox.label}/" + dateFormat.format(mail.date) + (mail.subject?.replace(" ", "_")) + ".html.html"),
                         mailFormatter.format(mail),
                         Charset.defaultCharset()
                     )
                     FileUtils.write(
-                        File("./output/${mbox.label}/raw/" + dateFormat.format(mail.date) + ".txt.txt"),
+                        File("./output/${mbox.label}/raw/" + dateFormat.format(mail.date) + (mail.subject?.replace(" ", "_")) + ".txt.txt"),
                         mail.raw,
                         Charset.defaultCharset()
                     )

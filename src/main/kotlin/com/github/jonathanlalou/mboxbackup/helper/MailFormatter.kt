@@ -10,6 +10,7 @@ class MailFormatter {
         for (header in mail.headers) {
             headers += "<tr><td><code>${header.first}</code></td><td><code>${header.second}</code></td></tr>\n"
         }
+
         headers += "</table>"
 //        TODO add from, date, to, cc, bcc
         return """
@@ -19,6 +20,10 @@ class MailFormatter {
                             ${headers}
                             <br/>
                             <br/>
+                            <h2>From: ${mail.from}</h2>
+                            <h2>To: ${mail.tos?.joinToString()}</h2>
+                            <h2>Cc: ${mail.ccs?.joinToString()}</h2>
+                            <h2>Bcc: ${mail.bccs?.joinToString()}</h2>
                             <h1>${mail.subject}</h1>
                             <br/>
                             <br/>
