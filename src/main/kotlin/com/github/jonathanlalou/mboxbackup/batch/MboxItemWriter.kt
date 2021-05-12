@@ -29,14 +29,28 @@ class MboxItemWriter : ItemWriter<Mbox> {
             Files.createDirectories(Paths.get("./output/${mbox.label}/raw"))
             for (mail in mbox.mails) {
                 if (mail.date != null) {
-                    LOGGER.info { "Writing... ${mail.raw?.subSequence(0..59)}" }
+                    LOGGER.info { "Writing... ${mail.raw.subSequence(0..59)}" }
+                    var fileName = dateFormat.format(mail.date) +
+                            "_" +
+                            mail.subject
+                                ?.replace(" ", "_")
+                                ?.replace("!", "")
+                                ?.replace(":", "")
+                                ?.replace(".", "_")
+                                ?.replace(",", "_")
+                                ?.replace("@", "")
+                                ?.replace("\n", "")
+                                ?.replace("\r", "")
+                                ?.replace("\t", "")
+                                ?.replace("\\p{Punct}", "")
+                                ?.replace("\\P{Alnum}", "")
                     FileUtils.write(
-                        File("./output/${mbox.label}/" + dateFormat.format(mail.date) + (mail.subject?.replace(" ", "_")) + ".html.html"),
+                        File("./output/${mbox.label}/${fileName}.html.html"),
                         mailFormatter.format(mail),
                         Charset.defaultCharset()
                     )
                     FileUtils.write(
-                        File("./output/${mbox.label}/raw/" + dateFormat.format(mail.date) + (mail.subject?.replace(" ", "_")) + ".txt.txt"),
+                        File("./output/${mbox.label}/raw/${fileName}.txt.txt"),
                         mail.raw,
                         Charset.defaultCharset()
                     )

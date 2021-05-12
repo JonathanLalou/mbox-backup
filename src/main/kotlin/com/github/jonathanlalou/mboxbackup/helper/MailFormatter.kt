@@ -14,6 +14,7 @@ class MailFormatter {
         headers += "</table>"
 //        TODO add from, date, to, cc, bcc
         return """
+                <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
                     <html>
                         <head></head>
                         <body>

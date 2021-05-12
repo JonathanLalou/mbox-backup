@@ -6,9 +6,6 @@ import lombok.extern.log4j.Log4j
 import mu.KotlinLogging
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.LineIterator
-import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.StringUtils.startsWith
-import org.apache.commons.lang3.StringUtils.trim
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.StepExecution
 import org.springframework.batch.core.annotation.BeforeStep
@@ -41,6 +38,15 @@ class MboxItemReader : ItemReader<Mbox> {
         const val Content_Transfer_Encoding = "Content-Transfer-Encoding"
         const val Cc = "Cc"
         const val Bcc = "Bcc"
+        const val ARC_Seal = "ARC-Seal"
+        const val ARC_Message_Signature = "ARC-Message-Signature"
+        const val ARC_Authentication_Results = "ARC-Authentication-Results"
+        const val Authentication_Results = "Authentication-Results"
+        const val DKIM_Signature = "DKIM-Signature"
+        const val X_Google_DKIM_Signature = "X-Google-DKIM-Signature"
+        const val X_Gm_Message_State = "X-Gm-Message-State"
+        const val X_Google_Smtp_Source = "X-Google-Smtp-Source"
+        const val References = "References"
     }
 
     private val LOGGER = KotlinLogging.logger {}
@@ -65,7 +71,16 @@ class MboxItemReader : ItemReader<Mbox> {
         In_Reply_To,
         MIME_Version,
         Content_Type,
-        Content_Transfer_Encoding
+        Content_Transfer_Encoding,
+        ARC_Seal,
+        ARC_Message_Signature,
+        ARC_Authentication_Results,
+        Authentication_Results,
+        DKIM_Signature,
+        X_Google_DKIM_Signature,
+        X_Gm_Message_State,
+        X_Google_Smtp_Source,
+        References,
     )
 
     var fileName: String? = null
@@ -78,20 +93,15 @@ class MboxItemReader : ItemReader<Mbox> {
     }
 
     override fun read(): Mbox? {
-        var mbox = Mbox()
+        val mbox = Mbox()
         mbox.label = fileName
-        var file = File("./working/" + fileName)
+        val file = File("./working/" + fileName)
         if (!file.exists()) {
             return null
         }
         val it: LineIterator = FileUtils.lineIterator(file, "UTF-8")
-        var lastLine: String?
-        lastLine = "\n"
-        var regex: Regex = Regex("From (\\d)+@(\\w)+ (\\w){3} (\\w){3} (\\d)+ (\\d)+:(\\d)+:(\\d)+ \\+(\\d)+ (\\d)+")
-        var mail: Mail = Mail()
-        var inHeaders = true
-        var previousHeader = ""
-        var previousLine = ""
+        val regex = Regex("From (\\d)+@(\\w)+ (\\w){3} (\\w){3} (\\d)+ (\\d)+:(\\d)+:(\\d)+ \\+(\\d)+ (\\d)+")
+        var mail = Mail()
         var body = ""
         var raw = ""
         try {
@@ -108,40 +118,9 @@ class MboxItemReader : ItemReader<Mbox> {
                     mail = Mail()
                     body = ""
                     raw = line
-                    mail.headers += Pair(line, "")
-                    inHeaders = true
                     continue
                 }
                 raw = raw + "\n" + line
-                val candidateHeader = trim(StringUtils.substringBefore(line, ":"))
-                val candidateHeaderValue = trim(StringUtils.substringAfter(line, ":"))
-                if (inHeaders && HEADERS.contains(candidateHeader.trim())) {
-                    mail.headers += Pair(candidateHeader, candidateHeaderValue)
-                    previousHeader = candidateHeader
-                } else if (
-                    Received.equals(previousHeader)
-                    || (Content_Type.equals(previousHeader) && StringUtils.contains(line, "charset="))
-                ) {
-                    inHeaders = true
-                    var pair = Pair(previousHeader, mail.headers.last().second + " " + line.trim())
-                    mail.headers.removeLast()
-                    mail.headers += pair
-                    // don't update `previousHeader`
-                } else if (
-                    DomainKey_Signature.equals(previousHeader)
-                    && startsWith(line, " ")
-                    && (startsWith(trim(line), "s=") || startsWith(trim(line), "h=") || startsWith(trim(line), "b="))
-                ) {
-                    inHeaders = true
-                    var pair = Pair(DomainKey_Signature, mail.headers.last().second + " " + line.trim())
-                    mail.headers.removeLast()
-                    mail.headers += pair
-                    // don't update `previousHeader`
-                } else {
-                    inHeaders = false
-                    body = body + "\n" + line
-                    previousLine = line
-                }
             }
         } finally {
             LineIterator.closeQuietly(it)
