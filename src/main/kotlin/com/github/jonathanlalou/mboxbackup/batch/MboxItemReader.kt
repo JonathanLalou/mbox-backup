@@ -7,6 +7,8 @@ import mu.KotlinLogging
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.LineIterator
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.StringUtils.startsWith
+import org.apache.commons.lang3.StringUtils.trim
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.StepExecution
 import org.springframework.batch.core.annotation.BeforeStep
@@ -111,8 +113,8 @@ class MboxItemReader : ItemReader<Mbox> {
                     continue
                 }
                 raw = raw + "\n" + line
-                val candidateHeader = StringUtils.trim(StringUtils.substringBefore(line, ":"))
-                val candidateHeaderValue = StringUtils.trim(StringUtils.substringAfter(line, ":"))
+                val candidateHeader = trim(StringUtils.substringBefore(line, ":"))
+                val candidateHeaderValue = trim(StringUtils.substringAfter(line, ":"))
                 if (inHeaders && HEADERS.contains(candidateHeader.trim())) {
                     mail.headers += Pair(candidateHeader, candidateHeaderValue)
                     previousHeader = candidateHeader
@@ -121,9 +123,20 @@ class MboxItemReader : ItemReader<Mbox> {
                     || (Content_Type.equals(previousHeader) && StringUtils.contains(line, "charset="))
                 ) {
                     inHeaders = true
-                    var pair = Pair(Received, mail.headers.last().second + " " + line.trim())
+                    var pair = Pair(previousHeader, mail.headers.last().second + " " + line.trim())
                     mail.headers.removeLast()
                     mail.headers += pair
+                    // don't update `previousHeader`
+                } else if (
+                    DomainKey_Signature.equals(previousHeader)
+                    && startsWith(line, " ")
+                    && (startsWith(trim(line), "s=") || startsWith(trim(line), "h=") || startsWith(trim(line), "b="))
+                ) {
+                    inHeaders = true
+                    var pair = Pair(DomainKey_Signature, mail.headers.last().second + " " + line.trim())
+                    mail.headers.removeLast()
+                    mail.headers += pair
+                    // don't update `previousHeader`
                 } else {
                     inHeaders = false
                     body = body + "\n" + line
