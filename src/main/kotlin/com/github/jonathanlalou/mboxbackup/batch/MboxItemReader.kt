@@ -58,6 +58,8 @@ class MboxItemReader : ItemReader<Mbox> {
         From,
         Subject,
         To,
+        Cc,
+        Bcc,
         In_Reply_To,
         MIME_Version,
         Content_Type,
@@ -99,7 +101,7 @@ class MboxItemReader : ItemReader<Mbox> {
                     mail.body = body
                     mail.raw = raw
                     mbox.mails += mail
-                    LOGGER.info { "Processing new mail element" }
+                    LOGGER.info { "(current size: ${mbox.mails.size}) Processing new mail element: ${line}" }
                     // init new mail
                     mail = Mail()
                     body = ""
