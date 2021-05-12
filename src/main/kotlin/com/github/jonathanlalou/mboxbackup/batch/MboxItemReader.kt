@@ -18,28 +18,30 @@ import java.io.File
 @Log4j
 @Component
 class MboxItemReader : ItemReader<Mbox> {
-    private val LOGGER = KotlinLogging.logger {}
+    companion object {
+        const val X_GM_THRID = "X-GM-THRID"
+        const val X_Gmail_Labels = "X-Gmail-Labels"
+        const val X_Gmail_Received = "X-Gmail-Received"
+        const val Delivered_To = "Delivered-To"
+        const val Received = "Received"
+        const val Return_Path = "Return-Path"
+        const val Received_SPF = "Received-SPF"
+        const val DomainKey_Status = "DomainKey-Status"
+        const val DomainKey_Signature = "DomainKey-Signature"
+        const val Message_ID = "Message-ID"
+        const val Date = "Date"
+        const val From = "From"
+        const val Subject = "Subject"
+        const val To = "To"
+        const val In_Reply_To = "In-Reply-To"
+        const val MIME_Version = "MIME-Version"
+        const val Content_Type = "Content-Type"
+        const val Content_Transfer_Encoding = "Content-Transfer-Encoding"
+        const val Cc = "Cc"
+        const val Bcc = "Bcc"
+    }
 
-    final val X_GM_THRID = "X-GM-THRID"
-    final val X_Gmail_Labels = "X-Gmail-Labels"
-    final val X_Gmail_Received = "X-Gmail-Received"
-    final val Delivered_To = "Delivered-To"
-    final val Received = "Received"
-    final val Return_Path = "Return-Path"
-    final val Received_SPF = "Received-SPF"
-    final val DomainKey_Status = "DomainKey-Status"
-    final val DomainKey_Signature = "DomainKey-Signature"
-    final val Message_ID = "Message-ID"
-    final val Date = "Date"
-    final val From = "From"
-    final val Subject = "Subject"
-    final val To = "To"
-    final val In_Reply_To = "In-Reply-To"
-    final val MIME_Version = "MIME-Version"
-    final val Content_Type = "Content-Type"
-    final val Content_Transfer_Encoding = "Content-Transfer-Encoding"
-    final val Cc = "Cc"
-    final val Bcc = "Bcc"
+    private val LOGGER = KotlinLogging.logger {}
 
     val HEADERS = mutableListOf(
         X_GM_THRID,
@@ -87,43 +89,26 @@ class MboxItemReader : ItemReader<Mbox> {
         var previousHeader = ""
         var previousLine = ""
         var body = ""
+        var raw = ""
         try {
             while (it.hasNext()) {
                 val line = it.nextLine()
 
                 if (line.matches(regex)) {
                     // conclude previous mail
-                    if (mail.headers.isNotEmpty()) {
-                        mail.body = body
-                        mail.from = mail.headers
-                            .filter { it.first.equals(From) }
-                            .firstOrNull()?.second
-                        mail.tos = mail.headers
-                            .filter { it.first.equals(To) }
-                            .firstOrNull()?.second
-                            ?.split(",")
-                            ?.map { StringUtils.trim(it) }
-                        mail.ccs = mail.headers
-                            .filter { it.first.equals(Cc) }
-                            .firstOrNull()?.second
-                            ?.split(",")
-                            ?.map { StringUtils.trim(it) }
-                        mail.bccs = mail.headers
-                            .filter { it.first.equals(Bcc) }
-                            .firstOrNull()
-                            ?.second
-                            ?.split(",")
-                            ?.map { StringUtils.trim(it) }
-                        mbox.mails += mail
-                    }
+                    mail.body = body
+                    mail.raw = raw
+                    mbox.mails += mail
                     LOGGER.info { "Processing new mail element" }
                     // init new mail
                     mail = Mail()
                     body = ""
+                    raw = line
                     mail.headers += Pair(line, "")
                     inHeaders = true
                     continue
                 }
+                raw = raw + "\n" + line
                 val candidateHeader = StringUtils.trim(StringUtils.substringBefore(line, ":"))
                 val candidateHeaderValue = StringUtils.trim(StringUtils.substringAfter(line, ":"))
                 if (inHeaders && HEADERS.contains(candidateHeader.trim())) {

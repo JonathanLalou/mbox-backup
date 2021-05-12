@@ -17,27 +17,30 @@ class MboxBackupConfiguration(
     @Bean
     fun step1(
         mboxItemReader: MboxItemReader,
-        mboxItemWriter: MboxItemWriter,
-        mboxItemReaderListener: MboxItemReaderListener
+        mboxItemReaderListener: MboxItemReaderListener,
+        mboxItemProcessor: MboxItemProcessor,
+        mboxItemWriter: MboxItemWriter
     ): Step {
         return stepBuilderFactory.get("step1")
             .chunk<Mbox, Mbox>(1)
             .reader(mboxItemReader)
             .listener(mboxItemReaderListener)
+            .processor(mboxItemProcessor)
             .writer(mboxItemWriter)
             .build()
     }
 
     @Bean
     fun job(
-        mboxItemReader: MboxItemReader,
-        mboxItemWriter: MboxItemWriter,
         jobListener: MboxBackupJobListener,
-        mboxItemReaderListener: MboxItemReaderListener
+        mboxItemReader: MboxItemReader,
+        mboxItemReaderListener: MboxItemReaderListener,
+        mboxItemProcessor: MboxItemProcessor,
+        mboxItemWriter: MboxItemWriter
     ): Job {
         return jobBuilderFactory.get("job")
             .listener(jobListener)
-            .start(step1(mboxItemReader, mboxItemWriter, mboxItemReaderListener))
+            .start(step1(mboxItemReader, mboxItemReaderListener, mboxItemProcessor, mboxItemWriter))
             .build()
     }
 }

@@ -14,5 +14,7 @@ data class Mail(
     var subject: String? = null,
     var body: String? = null,
 
+    var raw: String? = null,
+
     // TODO attachments
 )
