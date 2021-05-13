@@ -47,11 +47,11 @@ class MboxItemProcessor : ItemProcessor<Mbox, Mbox> {
             for (line in szHeaders) {
                 if (line.startsWith(" ")) {
                     var last = mail.headers.removeLast()
-                    mail.headers += Pair(last.first, last.second + "\n" + line)
+                    mail.headers.add(Pair(last.first, last.second + "\n" + line))
                 } else {
                     val candidateHeader = trim(StringUtils.substringBefore(line, ":"))
                     val candidateHeaderValue = trim(StringUtils.substringAfter(line, ":"))
-                    mail.headers += Pair(candidateHeader, candidateHeaderValue)
+                    mail.headers.add(Pair(candidateHeader, candidateHeaderValue))
                 }
             }
 
@@ -62,9 +62,7 @@ class MboxItemProcessor : ItemProcessor<Mbox, Mbox> {
                     ?.second
                     ?.substringAfter("<")
                     ?.substringBefore(">")
-                if (null == mail.subject) {
-                    mail.subject = "(no subject)"
-                }
+                    .orEmpty()
                 mail.from = mail.headers
                     .filter { it.first.equals(MboxItemReader.From) }
                     .firstOrNull()
@@ -87,12 +85,14 @@ class MboxItemProcessor : ItemProcessor<Mbox, Mbox> {
                     .firstOrNull()?.second
                     ?.split(",")
                     ?.map { trim(it) }
+                    .orEmpty()
                 mail.bccs = mail.headers
                     .filter { it.first.equals(Bcc) }
                     .firstOrNull()
                     ?.second
                     ?.split(",")
                     ?.map { trim(it) }
+                    .orEmpty()
 
                 var szDate = mail.headers.filter { it.first.equals(Date) }.firstOrNull()?.second
                 if (null == szDate) {
