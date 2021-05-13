@@ -108,7 +108,10 @@ class MboxItemReader : ItemReader<Mbox> {
             while (it.hasNext()) {
                 val line = it.nextLine()
 
-                if (line.matches(regex)) {
+                if (line.length > 4
+                    && line.subSequence(0, 4).equals("From")
+                    && line.matches(regex)
+                ) {
                     // conclude previous mail
                     mail.body = body
                     mail.raw = raw
