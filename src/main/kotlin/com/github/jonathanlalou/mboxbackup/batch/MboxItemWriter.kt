@@ -5,6 +5,7 @@ import com.github.jonathanlalou.mboxbackup.helper.MailFormatter
 import lombok.extern.log4j.Log4j
 import mu.KotlinLogging
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.StringUtils
 import org.springframework.batch.item.ItemWriter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -17,6 +18,7 @@ import java.text.SimpleDateFormat
 @Component
 @Log4j
 class MboxItemWriter : ItemWriter<Mbox> {
+    @Suppress("PrivatePropertyName")
     private val LOGGER = KotlinLogging.logger {}
 
     val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss")
@@ -34,21 +36,22 @@ class MboxItemWriter : ItemWriter<Mbox> {
                             "_" +
                             mail.subject
                                 ?.replace(" ", "_")
-                                ?.replace("!", "")
-                                ?.replace(":", "")
-                                ?.replace(".", "_")
-                                ?.replace(",", "_")
                                 ?.replace("@", "")
-                                ?.replace("?", "")
                                 ?.replace("=", "_")
-                                ?.replace(";", "")
                                 ?.replace("'", "")
+                                ?.replace("|", "")
+                                ?.replace("/", "_")
+                                ?.replace("\\", "")
+                                ?.replace("UTF8", "")
+                                ?.replace("ISO-8859", "")
                                 ?.replace("\"", "_")
                                 ?.replace("\n", "")
                                 ?.replace("\r", "")
                                 ?.replace("\t", "")
-                                ?.replace("\\p{Punct}", "")
-                                ?.replace("\\P{Alnum}", "")
+                                ?.replace(Regex("\\p{Punct}"), "")
+                                ?.replace(Regex("\\P{Alnum}"), "")
+                    fileName = StringUtils.substring(fileName, 0, 50)
+
                     FileUtils.write(
                         File("./output/${mbox.label}/${fileName}.html.html"),
                         mailFormatter.format(mail),
@@ -61,6 +64,7 @@ class MboxItemWriter : ItemWriter<Mbox> {
                     )
                 }
             }
+            LOGGER.warn { "Completed ${mbox.label}, ${mbox.mails.size} with: elements" }
         }
     }
 
