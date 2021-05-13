@@ -7,10 +7,11 @@ import org.springframework.batch.core.JobExecutionListener
 import org.springframework.stereotype.Component
 import java.io.File
 import java.io.FileNotFoundException
+import kotlin.system.exitProcess
 
 @Component
 class MboxBackupJobListener : JobExecutionListener {
-    private val logger = KotlinLogging.logger {}
+    private val LOGGER = KotlinLogging.logger {}
     var fileName: String? = null
 
     override fun beforeJob(jobExecution: JobExecution) {
@@ -19,12 +20,16 @@ class MboxBackupJobListener : JobExecutionListener {
 
         println("BeforeJob: $jobName")
         for (fileToDelete in File("./working").listFiles()) {
-            logger.info { "Deleting: ${fileToDelete}" }
+            LOGGER.info { "Deleting: ${fileToDelete}" }
             fileToDelete.delete()
         }
         for (fileToDelete in File("./done").listFiles()) {
-            logger.info { "Deleting: ${fileToDelete}" }
+            LOGGER.info { "Deleting: ${fileToDelete}" }
             fileToDelete.delete()
+        }
+        if (!File("./input/${fileName}").exists()) {
+            LOGGER.error { "./input/${fileName} does not exist, will exit" }
+            exitProcess(1)
         }
         FileUtils.copyFile(
             File("./input/${fileName}"),
